@@ -21,7 +21,7 @@ public class Project {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
-    private User ownerId;
+    private User owner;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -63,12 +63,12 @@ public class Project {
         this.status = status;
     }
 
-    public User getOwnerId() {
-        return ownerId;
+    public User getOwner() {
+        return owner;
     }
 
-    public void setOwnerId(User ownerId) {
-        this.ownerId = ownerId;
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     public LocalDateTime getCreatedAt() {

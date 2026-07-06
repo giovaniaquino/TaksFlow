@@ -1,0 +1,11 @@
+package com.giovani.tarefas.repository;
+
+import com.giovani.tarefas.model.entity.Project;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ProjectRepository extends JpaRepository<Project, Long> {
+
+    Page<Project> findAllByOwnerId(Long id, Pageable pageable);
+}

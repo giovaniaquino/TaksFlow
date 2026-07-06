@@ -16,11 +16,11 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
-    private Project projectId;
+    private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "responsible_user_id")
-    private User responsibleUserId;
+    private User responsibleUser;
 
     private String title;
     private String description;
@@ -53,20 +53,20 @@ public class Task {
         this.id = id;
     }
 
-    public Project getProjectId() {
-        return projectId;
+    public Project getProject() {
+        return project;
     }
 
-    public void setProjectId(Project projectId) {
-        this.projectId = projectId;
+    public void setProject(Project project) {
+        this.project = project;
     }
 
-    public User getResponsibleUserId() {
-        return responsibleUserId;
+    public User getResponsibleUser() {
+        return responsibleUser;
     }
 
-    public void setResponsibleUserId(User responsibleUserId) {
-        this.responsibleUserId = responsibleUserId;
+    public void setResponsibleUser(User responsibleUser) {
+        this.responsibleUser = responsibleUser;
     }
 
     public String getTitle() {
