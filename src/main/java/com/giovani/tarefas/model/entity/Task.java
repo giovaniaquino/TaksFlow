@@ -4,6 +4,7 @@ import com.giovani.tarefas.model.enums.TaskPrio;
 import com.giovani.tarefas.model.enums.TaskStatus;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,7 +33,7 @@ public class Task {
     private TaskStatus status;
 
     @Column(name = "due_date")
-    private LocalDateTime dueDate;
+    private LocalDate dueDate;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -101,11 +102,11 @@ public class Task {
         this.status = status;
     }
 
-    public LocalDateTime getDueDate() {
+    public LocalDate getDueDate() {
         return dueDate;
     }
 
-    public void setDueDate(LocalDateTime dueDate) {
+    public void setDueDate(LocalDate dueDate) {
         this.dueDate = dueDate;
     }
 

@@ -41,11 +41,11 @@ CREATE TABLE task(
     description VARCHAR(255),
     prio VARCHAR(10) NOT NULL,
     status VARCHAR(15) NOT NULL DEFAULT 'TO_DO',
-    due_date TIMESTAMP NOT NULL CHECK ( due_date > CURRENT_TIMESTAMP ),
+    due_date DATE NOT NULL CHECK ( due_date > CURRENT_TIMESTAMP ),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     CHECK ( prio IN ('LOW', 'MEDIUM', 'HIGH')),
-    CHECK ( status IN ('TO_DO', 'IN_PROGRESS', 'DONE'))
+    CHECK ( status IN ('TO_DO', 'IN_PROGRESS', 'DONE', 'CANCELED'))
 );
 
 CREATE INDEX idx_task_project ON task(project_id);
