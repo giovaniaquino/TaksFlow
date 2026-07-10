@@ -1,7 +1,9 @@
 package com.giovani.tarefas.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public record ProjectRequest(
-        String name,
+        @NotBlank String name,
         String description
 ) {
 }

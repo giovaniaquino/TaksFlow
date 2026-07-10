@@ -6,6 +6,7 @@ import com.giovani.tarefas.dto.ProjectRequest;
 import com.giovani.tarefas.dto.ProjectResponse;
 import com.giovani.tarefas.service.ProjectMemberService;
 import com.giovani.tarefas.service.ProjectService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -25,17 +26,17 @@ public class ProjectController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ProjectResponse createProject(@RequestBody ProjectRequest projectRequest) {
+    public ProjectResponse createProject(@Valid @RequestBody ProjectRequest projectRequest) {
         return projectService.createProject(projectRequest);
     }
 
     @GetMapping
-    public Page<ProjectResponse> findProjectByOwner(@RequestParam String owner, Pageable pageable) {
+    public Page<ProjectResponse> findProjectByOwner(@Valid @RequestParam String owner, Pageable pageable) {
         return projectService.findProjectByOwner(owner, pageable);
     }
 
     @PostMapping("/member/{projectId}")
-    public ProjectMemberResponse addUserToProject(@PathVariable Long projectId, @RequestBody ProjectMemberRequest request) {
+    public ProjectMemberResponse addUserToProject(@Valid @PathVariable Long projectId, @RequestBody ProjectMemberRequest request) {
         return projectMemberService.addUserToProject(projectId, request);
     }
 }

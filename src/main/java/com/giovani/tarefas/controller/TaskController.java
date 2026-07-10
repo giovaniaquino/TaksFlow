@@ -3,6 +3,7 @@ package com.giovani.tarefas.controller;
 import com.giovani.tarefas.dto.TaskRequest;
 import com.giovani.tarefas.dto.TaskResponse;
 import com.giovani.tarefas.service.TaskService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,22 +19,22 @@ public class TaskController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TaskResponse createTask(@RequestBody TaskRequest request) {
+    public TaskResponse createTask(@Valid @RequestBody TaskRequest request) {
         return taskService.createTask(request);
     }
 
     @PatchMapping("/{taskId}/in_progress")
-    public TaskResponse taskInProgress(@PathVariable Long taskId) {
+    public TaskResponse taskInProgress(@Valid @PathVariable Long taskId) {
         return taskService.taskInProgress(taskId);
     }
 
     @PatchMapping("/{taskId}/done")
-    public TaskResponse taskDone(@PathVariable Long taskId) {
+    public TaskResponse taskDone(@Valid @PathVariable Long taskId) {
         return taskService.taskDone(taskId);
     }
 
     @PatchMapping("/{taskId}/canceled")
-    public TaskResponse taskCanceled(@PathVariable Long taskId) {
+    public TaskResponse taskCanceled(@Valid @PathVariable Long taskId) {
         return taskService.taskCanceled(taskId);
     }
 }

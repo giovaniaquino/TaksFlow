@@ -1,6 +1,8 @@
 package com.giovani.tarefas.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public record ProjectMemberRequest(
-        Long userId
+        @NotBlank Long userId
 ) {
 }
