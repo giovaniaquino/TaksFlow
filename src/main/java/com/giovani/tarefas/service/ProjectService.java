@@ -2,6 +2,7 @@ package com.giovani.tarefas.service;
 
 import com.giovani.tarefas.dto.ProjectRequest;
 import com.giovani.tarefas.dto.ProjectResponse;
+import com.giovani.tarefas.exception.BusinessRuleException;
 import com.giovani.tarefas.model.entity.Project;
 import com.giovani.tarefas.model.entity.ProjectMember;
 import com.giovani.tarefas.model.entity.User;
@@ -31,7 +32,7 @@ public class ProjectService {
         String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User owner = userRepository.findByUsername(loggedUser)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         Project project = new Project();
         project.setName(request.name());
@@ -52,7 +53,7 @@ public class ProjectService {
 
     public Page<ProjectResponse> findProjectByOwner (String owner, Pageable pageable) {
         User user = userRepository.findByUsername(owner)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
         return projectRepository.findAllByOwnerId(user.getId(), pageable).map(ProjectResponse::fromEntity);
     }
 }

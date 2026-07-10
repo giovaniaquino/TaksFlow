@@ -2,6 +2,7 @@ package com.giovani.tarefas.service;
 
 import com.giovani.tarefas.dto.TaskRequest;
 import com.giovani.tarefas.dto.TaskResponse;
+import com.giovani.tarefas.exception.BusinessRuleException;
 import com.giovani.tarefas.model.entity.Project;
 import com.giovani.tarefas.model.entity.Task;
 import com.giovani.tarefas.model.entity.User;
@@ -34,13 +35,13 @@ public class TaskService {
 
     public TaskResponse createTask(TaskRequest request){
         Project project = projectRepository.findById(request.projectId())
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+                .orElseThrow(() -> new BusinessRuleException("Project not found"));
 
         User user = userRepository.findById(request.responsibleId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), user.getId())){
-            throw new RuntimeException("User doesn't make part of the project");
+            throw new BusinessRuleException("User doesn't make part of the project");
         }
 
         Task newTask = new Task();
@@ -55,7 +56,7 @@ public class TaskService {
         }
         newTask.setStatus(TaskStatus.TO_DO);
         if (request.dueDate().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Due date cannot be before current date");
+            throw new BusinessRuleException("Due date cannot be before current date");
         } else {
             newTask.setDueDate(request.dueDate());
         }
@@ -66,17 +67,13 @@ public class TaskService {
 
     public TaskResponse taskInProgress(Long taskId){
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
-        System.out.println("Task found");
+                .orElseThrow(() -> new BusinessRuleException("Task not found"));
 
-        if (!checkResponsible(task)) throw new RuntimeException("Only the responsible set in progress");
-        System.out.println("Responsible found");
+        if (!checkResponsible(task)) throw new BusinessRuleException("Only the responsible set in progress");
 
         if (!task.getStatus().equals(TaskStatus.TO_DO)) {
-            throw new RuntimeException("Only task to do can be in progress");
+            throw new BusinessRuleException("Only task to do can be in progress");
         }
-        System.out.println("Task to do can be in progress");
-
         task.setUpdatedAt(LocalDateTime.now());
         task.setStatus(TaskStatus.IN_PROGRESS);
 
@@ -85,12 +82,12 @@ public class TaskService {
 
     public TaskResponse taskDone(Long taskId){
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new BusinessRuleException("Task not found"));
 
-        if (!checkResponsible(task)) throw new RuntimeException("Only the responsible set done");
+        if (!checkResponsible(task)) throw new BusinessRuleException("Only the responsible set done");
 
         if (!task.getStatus().equals(TaskStatus.IN_PROGRESS)) {
-            throw new RuntimeException("Only task in progress can be done");
+            throw new BusinessRuleException("Only task in progress can be done");
         }
         task.setUpdatedAt(LocalDateTime.now());
         task.setStatus(TaskStatus.DONE);
@@ -99,12 +96,12 @@ public class TaskService {
 
     public TaskResponse taskCanceled(Long taskId){
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new BusinessRuleException("Task not found"));
 
-        if (!checkResponsible(task)) throw new RuntimeException("Only the responsible set cancel");
+        if (!checkResponsible(task)) throw new BusinessRuleException("Only the responsible set cancel");
 
         if (task.getStatus().equals(TaskStatus.DONE)) {
-            throw new RuntimeException("Done task cannot be canceled");
+            throw new BusinessRuleException("Done task cannot be canceled");
         }
         task.setUpdatedAt(LocalDateTime.now());
         task.setStatus(TaskStatus.CANCELED);
@@ -116,7 +113,7 @@ public class TaskService {
         String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User responsible = userRepository.findByUsername(loggedUser)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         return responsible.getUsername().equals(task.getResponsibleUser().getUsername());
     }

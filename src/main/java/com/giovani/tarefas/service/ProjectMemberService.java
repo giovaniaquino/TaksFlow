@@ -2,6 +2,7 @@ package com.giovani.tarefas.service;
 
 import com.giovani.tarefas.dto.ProjectMemberRequest;
 import com.giovani.tarefas.dto.ProjectMemberResponse;
+import com.giovani.tarefas.exception.BusinessRuleException;
 import com.giovani.tarefas.model.entity.Project;
 import com.giovani.tarefas.model.entity.ProjectMember;
 import com.giovani.tarefas.model.entity.User;
@@ -29,12 +30,12 @@ public class ProjectMemberService {
         String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+                .orElseThrow(() -> new BusinessRuleException("Project not found"));
 
-        if (!project.getOwner().getUsername().equals(loggedUser)) throw new RuntimeException("Only the owner can add new users");
+        if (!project.getOwner().getUsername().equals(loggedUser)) throw new BusinessRuleException("Only the owner can add new users");
 
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         ProjectMember newMember = new ProjectMember();
         newMember.setUser(user);

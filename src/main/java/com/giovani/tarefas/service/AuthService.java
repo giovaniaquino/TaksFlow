@@ -1,5 +1,6 @@
 package com.giovani.tarefas.service;
 
+import com.giovani.tarefas.exception.BusinessRuleException;
 import com.giovani.tarefas.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,6 +19,6 @@ public class AuthService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
     }
 }
