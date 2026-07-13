@@ -12,6 +12,9 @@ import com.giovani.tarefas.repository.ProjectMemberRepository;
 import com.giovani.tarefas.repository.ProjectRepository;
 import com.giovani.tarefas.repository.TaskRepository;
 import com.giovani.tarefas.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -33,8 +36,8 @@ public class TaskService {
         this.userRepository = userRepository;
     }
 
-    public TaskResponse createTask(TaskRequest request){
-        Project project = projectRepository.findById(request.projectId())
+    public TaskResponse createTask(Long projectId, TaskRequest request){
+        Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessRuleException("Project not found"));
 
         User user = userRepository.findById(request.responsibleId())
@@ -63,6 +66,62 @@ public class TaskService {
 
         taskRepository.save(newTask);
         return TaskResponse.fromEntity(newTask);
+    }
+
+    public Page<TaskResponse> getTasks(Long projectId, Pageable pageable) {
+        String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(loggedUser)
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessRuleException("Project not found"));
+        if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), user.getId())) {
+            throw new BusinessRuleException("User doesn't make part of the project");
+        }
+
+        return taskRepository.findAllByProjectId(projectId, pageable).map(TaskResponse::fromEntity);
+    }
+
+    public TaskResponse updateTask(Long projectId, Long taskId, TaskRequest request){
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessRuleException("Project not found"));
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new BusinessRuleException("Task not found"));
+
+        if (request.title() != null){
+            task.setTitle(request.title());
+        }
+        if (request.description() != null){
+            task.setDescription(request.description());
+        }
+        if (request.prio() != null){
+            task.setPrio(TaskPrio.valueOf(request.prio()));
+        }
+
+        Task updatedTask = taskRepository.save(task);
+        return TaskResponse.fromEntity(updatedTask);
+    }
+
+    @Transactional
+    public void deleteTask(Long projectId, Long taskId) {
+        String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(loggedUser).
+                orElseThrow(() -> new BusinessRuleException("User not found"));
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessRuleException("Project not found"));
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new BusinessRuleException("Task not found"));
+
+        boolean isResponsible = user.getId().equals(task.getResponsibleUser().getId());
+        boolean isOwner = user.getId().equals(project.getOwner().getId());
+
+        if (!isResponsible && !isOwner) {
+            throw new BusinessRuleException("Only the owner and the responsible can delete this task");
+        }
+
+        taskRepository.delete(task);
     }
 
     public TaskResponse taskInProgress(Long taskId){
@@ -107,7 +166,6 @@ public class TaskService {
         task.setStatus(TaskStatus.CANCELED);
         return TaskResponse.fromEntity(taskRepository.save(task));
     }
-
 
     private boolean checkResponsible(Task task){
         String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
