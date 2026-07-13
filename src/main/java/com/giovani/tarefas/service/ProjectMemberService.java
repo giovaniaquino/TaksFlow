@@ -1,6 +1,5 @@
 package com.giovani.tarefas.service;
 
-import com.giovani.tarefas.dto.ProjectMemberRequest;
 import com.giovani.tarefas.dto.ProjectMemberResponse;
 import com.giovani.tarefas.exception.BusinessRuleException;
 import com.giovani.tarefas.model.entity.Project;
@@ -9,6 +8,7 @@ import com.giovani.tarefas.model.entity.User;
 import com.giovani.tarefas.repository.ProjectMemberRepository;
 import com.giovani.tarefas.repository.ProjectRepository;
 import com.giovani.tarefas.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +25,7 @@ public class ProjectMemberService {
         this.projectMemberRepository = projectMemberRepository;
     }
 
-    public ProjectMemberResponse addUserToProject(Long projectId, ProjectMemberRequest request){
+    public ProjectMemberResponse addUserToProject(Long projectId, Long userId){
         // Get username from JWT to verify the owner
         String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -34,7 +34,7 @@ public class ProjectMemberService {
 
         if (!project.getOwner().getUsername().equals(loggedUser)) throw new BusinessRuleException("Only the owner can add new users");
 
-        User user = userRepository.findById(request.userId())
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         ProjectMember newMember = new ProjectMember();
@@ -43,5 +43,20 @@ public class ProjectMemberService {
 
         ProjectMember saveMember = projectMemberRepository.save(newMember);
         return  ProjectMemberResponse.fromEntity(saveMember);
+    }
+
+    @Transactional
+    public void deleteUserFromProject(Long projectId, Long userId){
+        String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessRuleException("Project not found"));
+
+        if (!project.getOwner().getUsername().equals(loggedUser)) throw new BusinessRuleException("Only the owner can remove users");
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
+
+        projectMemberRepository.deleteByProjectIdAndUserId(projectId, userId);
     }
 }

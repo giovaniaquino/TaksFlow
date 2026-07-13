@@ -1,6 +1,5 @@
 package com.giovani.tarefas.controller;
 
-import com.giovani.tarefas.dto.ProjectMemberRequest;
 import com.giovani.tarefas.dto.ProjectMemberResponse;
 import com.giovani.tarefas.dto.ProjectRequest;
 import com.giovani.tarefas.dto.ProjectResponse;
@@ -31,12 +30,32 @@ public class ProjectController {
     }
 
     @GetMapping
-    public Page<ProjectResponse> findProjectByOwner(@Valid @RequestParam String owner, Pageable pageable) {
-        return projectService.findProjectByOwner(owner, pageable);
+    public Page<ProjectResponse> findUserProjects(Pageable pageable) {
+        return projectService.findUserProjects(pageable);
     }
 
-    @PostMapping("/member/{projectId}")
-    public ProjectMemberResponse addUserToProject(@Valid @PathVariable Long projectId, @RequestBody ProjectMemberRequest request) {
-        return projectMemberService.addUserToProject(projectId, request);
+    @GetMapping("/{projectId}")
+    public ProjectResponse findProjectById(@PathVariable Long projectId) {
+        return projectService.findProjectById(projectId);
+    }
+
+    @PutMapping("/{projectId}")
+    public ProjectResponse updateProject(@PathVariable Long projectId, @RequestBody ProjectRequest projectRequest) {
+        return projectService.updateProject(projectId, projectRequest);
+    }
+
+    @DeleteMapping("/{projectId}")
+    public void deleteProject(@PathVariable Long projectId) {
+        projectService.deleteProject(projectId);
+    }
+
+    @PostMapping("{projectId}/member/{userId}")
+    public ProjectMemberResponse addUserToProject(@PathVariable Long projectId, @PathVariable Long userId) {
+        return projectMemberService.addUserToProject(projectId, userId);
+    }
+
+    @DeleteMapping("{projectId}/member/{userId}")
+    public void deleteUserFromProject(@PathVariable Long projectId, @PathVariable Long userId) {
+        projectMemberService.deleteUserFromProject(projectId, userId);
     }
 }

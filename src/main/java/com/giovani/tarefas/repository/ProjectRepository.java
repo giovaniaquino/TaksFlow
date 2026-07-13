@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
-    Page<Project> findAllByOwnerId(Long id, Pageable pageable);
+    Page<Project> findAllById(Long id, Pageable pageable);
 }
