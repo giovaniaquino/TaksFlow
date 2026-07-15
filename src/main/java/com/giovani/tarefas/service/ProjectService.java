@@ -30,10 +30,7 @@ public class ProjectService {
     }
 
     public ProjectResponse createProject(ProjectRequest request) {
-        String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User owner = userRepository.findByUsername(loggedUser)
-                .orElseThrow(() -> new BusinessRuleException("User not found"));
+        User owner = getLoggedUser();
 
         Project project = new Project();
         project.setName(request.name());
@@ -53,9 +50,7 @@ public class ProjectService {
     }
 
     public Page<ProjectResponse> findUserProjects (Pageable pageable) {
-        String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(loggedUser)
-                .orElseThrow(() -> new BusinessRuleException("User not found"));
+        User user = getLoggedUser();
 
         ProjectMember projects = projectMemberRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new BusinessRuleException("User does not participate in any project"));
@@ -63,20 +58,13 @@ public class ProjectService {
     }
 
     public ProjectResponse findProjectById(Long projectId) {
-        Project foundProject = projectRepository.findById(projectId)
-                .orElseThrow(() -> new BusinessRuleException("Project not found"));
-
+        Project foundProject = getProjectById(projectId);
         return ProjectResponse.fromEntity(foundProject);
     }
 
     public ProjectResponse updateProject(Long projectId, ProjectRequest request) {
-        String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User owner = userRepository.findByUsername(loggedUser)
-                .orElseThrow(() -> new BusinessRuleException("User not found"));
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new BusinessRuleException("Project not found"));
+        User owner = getLoggedUser();
+        Project project = getProjectById(projectId);
 
         if (!project.getOwner().getId().equals(owner.getId())) {
             throw new BusinessRuleException("You are not the owner of this project");
@@ -97,13 +85,8 @@ public class ProjectService {
 
     @Transactional
     public void deleteProject(Long projectId){
-        String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User owner = userRepository.findByUsername(loggedUser)
-                .orElseThrow(() -> new BusinessRuleException("User not found"));
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new BusinessRuleException("Project not found"));
+        User owner = getLoggedUser();
+        Project project = getProjectById(projectId);
 
         if (!project.getOwner().getId().equals(owner.getId())) {
             throw new BusinessRuleException("You are not the owner of this project");
@@ -111,5 +94,17 @@ public class ProjectService {
 
         projectMemberRepository.deleteByProjectId(projectId);
         projectRepository.delete(project);
+    }
+
+    private User getLoggedUser() {
+        String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        return userRepository.findByUsername(loggedUser)
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
+    }
+
+    private Project getProjectById(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new BusinessRuleException("Project not found"));
     }
 }
