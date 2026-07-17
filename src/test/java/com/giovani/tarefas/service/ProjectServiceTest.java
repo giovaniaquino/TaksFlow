@@ -14,13 +14,16 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.List;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
@@ -107,12 +110,54 @@ class ProjectServiceTest {
     }
 
     @Test
+    @DisplayName("Should return page of projects of the logged user")
+    void findUserProjectSuccess(){
+        User user = new  User();
+        user.setId(1L);
+        user.setUsername(LOGGED_USERNAME);
+
+        Project foundProject = new Project();
+        foundProject.setId(1L);
+        foundProject.setName("Project Name");
+        foundProject.setOwner(user);
+
+        ProjectMember projectMember = new ProjectMember();
+        projectMember.setId(12L);
+        projectMember.setUser(user);
+        projectMember.setProject(foundProject);
+
+        Mockito.when(userRepository.findByUsername(LOGGED_USERNAME)).thenReturn(Optional.of(user));
+        Mockito.when(projectMemberRepository.findByUserId(1L)).thenReturn(Optional.of(projectMember));
+
+        Page<Project> projectPage = new PageImpl<>(List.of(foundProject));
+
+        Mockito.when(projectRepository.findAllById(Mockito.eq(1L), Mockito.any(Pageable.class)))
+                .thenReturn(projectPage);
+
+        Page<ProjectResponse> response = projectService.findUserProjects(PageRequest.of(0,10));
+
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(1, response.getTotalElements());
+
+        ProjectResponse projectResponse = response.getContent().getFirst();
+        Assertions.assertEquals("Project Name", projectResponse.name());
+    }
+
+    @Test
     @DisplayName("Should throw exception when user not found")
     void findUserFail(){
         Mockito.when(userRepository.findByUsername(LOGGED_USERNAME)).thenReturn(Optional.empty());
 
         Assertions.assertThrows(BusinessRuleException.class, () -> {
             projectService.createProject(new ProjectRequest("Project Name", "Project Description"));
+        });
+    }
+
+    @Test
+    @DisplayName("Should throw exception when user does not participate in any project")
+    void findUserProjectsFail(){
+        Assertions.assertThrows(BusinessRuleException.class, () -> {
+            projectService.findUserProjects(PageRequest.of(0,10));
         });
     }
 
@@ -143,4 +188,144 @@ class ProjectServiceTest {
         });
     }
 
+    @Test
+    @DisplayName("Should return the updated project")
+    void updateProjectSuccess(){
+        User user = new  User();
+        user.setId(1L);
+        user.setUsername(LOGGED_USERNAME);
+
+        Project project = new Project();
+        project.setId(1L);
+        project.setName("Project Name");
+        project.setOwner(user);
+        project.setStatus(ProjectStatus.ACTIVE);
+
+        ProjectRequest request = new ProjectRequest(
+                "Second Name",
+                "Project Description"
+        );
+
+        Project updateProject = new Project();
+        updateProject.setId(1L);
+        updateProject.setName("Project Name");
+        updateProject.setOwner(user);
+        updateProject.setStatus(ProjectStatus.ACTIVE);
+
+        Mockito.when(userRepository.findByUsername(LOGGED_USERNAME)).thenReturn(Optional.of(user));
+        Mockito.when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        Mockito.when(projectRepository.save(project)).thenReturn(updateProject);
+
+        ProjectResponse response = projectService.updateProject(1L, request);
+
+        Mockito.verify(projectRepository).save(projectCaptor.capture());
+        Project capturedProject = projectCaptor.getValue();
+        Assertions.assertEquals("Second Name", capturedProject.getName());
+        Assertions.assertEquals(user, capturedProject.getOwner());
+        Assertions.assertEquals(ProjectStatus.ACTIVE, capturedProject.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should throw exception and not update when user is not the owner")
+    void updateUserFailWhenNotOwner(){
+        User user = new  User();
+        user.setId(99L);
+        user.setUsername(LOGGED_USERNAME);
+
+        User owner = new  User();
+        owner.setId(1L);
+
+        Project project = new Project();
+        project.setId(1L);
+        project.setName("Project Name");
+        project.setOwner(owner);
+        project.setStatus(ProjectStatus.ACTIVE);
+
+        ProjectRequest request = new ProjectRequest(
+                "Second Name",
+                "Project Description"
+        );
+
+        Mockito.when(userRepository.findByUsername(LOGGED_USERNAME)).thenReturn(Optional.of(user));
+        Mockito.when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+
+        Assertions.assertThrows(BusinessRuleException.class, () -> {
+            projectService.updateProject(1L, request);
+
+            Mockito.verify(projectRepository, Mockito.never()).save(Mockito.any(Project.class));
+        });
+    }
+
+    @Test
+    @DisplayName("Should throw exception and not update when status is not active")
+    void updateUserFailWhenStatusNotActive(){
+        User owner = new  User();
+        owner.setId(1L);
+        owner.setUsername(LOGGED_USERNAME);
+
+        Project project = new Project();
+        project.setId(1L);
+        project.setName("Project Name");
+        project.setOwner(owner);
+        project.setStatus(ProjectStatus.ARCHIVED);
+
+        ProjectRequest request = new ProjectRequest(
+                "Second Name",
+                "Project Description"
+        );
+
+        Mockito.when(userRepository.findByUsername(LOGGED_USERNAME)).thenReturn(Optional.of(owner));
+        Mockito.when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+
+        Assertions.assertThrows(BusinessRuleException.class, () -> {
+            projectService.updateProject(1L, request);
+
+            Mockito.verify(projectRepository, Mockito.never()).save(Mockito.any(Project.class));
+        });
+    }
+
+    @Test
+    @DisplayName("Should delete the project and members when is the owner deleting")
+    void deleteProjectSuccess(){
+        User owner = new User();
+        owner.setId(1L);
+        owner.setUsername(LOGGED_USERNAME);
+
+        Project project = new Project();
+        project.setId(10L);
+        project.setOwner(owner);
+
+        Mockito.when(userRepository.findByUsername(LOGGED_USERNAME)).thenReturn(Optional.of(owner));
+        Mockito.when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+
+        projectService.deleteProject(10L);
+
+        Mockito.verify(projectMemberRepository).deleteByProjectId(10L);
+        Mockito.verify(projectRepository).delete(project);
+    }
+
+    @Test
+    @DisplayName("Should throw exception and not delete when user is not the owner")
+    void deleteProjectWhenUserIsNotOwner() {
+        User user = new User();
+        user.setId(99L);
+        user.setUsername(LOGGED_USERNAME);
+
+        User owner = new User();
+        owner.setId(1L);
+
+        Project project = new Project();
+        project.setId(10L);
+        project.setOwner(owner);
+
+        Mockito.when(userRepository.findByUsername(LOGGED_USERNAME)).thenReturn(Optional.of(user));
+        Mockito.when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+
+        Assertions.assertThrows(BusinessRuleException.class, () -> {
+            projectService.deleteProject(10L);
+        });
+
+        Mockito.verify(projectMemberRepository, Mockito.never()).deleteByProjectId(Mockito.anyLong());
+        Mockito.verify(projectRepository, Mockito.never()).delete(Mockito.any(Project.class));
+    }
 }
