@@ -1,6 +1,7 @@
 package com.giovani.tarefas.service;
 
 import com.giovani.tarefas.dto.ProjectMemberResponse;
+import com.giovani.tarefas.exception.BusinessRuleException;
 import com.giovani.tarefas.model.entity.Project;
 import com.giovani.tarefas.model.entity.ProjectMember;
 import com.giovani.tarefas.model.entity.User;
@@ -89,5 +90,67 @@ class ProjectMemberServiceTest {
         Assertions.assertNotNull(captured);
         Assertions.assertEquals("User", captured.getUser().getUsername());
         Assertions.assertEquals("Project", captured.getProject().getName());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when non owner try to add to project")
+    void notOwnerTryAddFail(){
+        User owner = new  User();
+        owner.setId(1L);
+        owner.setUsername("Owner");
+
+        Project project = new  Project();
+        project.setId(10L);
+        project.setName("Project");
+        project.setOwner(owner);
+
+        Mockito.when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+
+        Assertions.assertThrows(BusinessRuleException.class, () -> {
+            projectMemberService.addUserToProject(10L, 2L);
+        });
+        Mockito.verify(projectMemberRepository, Mockito.never()).save(Mockito.any(ProjectMember.class));
+    }
+
+    @Test
+    @DisplayName("Should delete user from project")
+    void deleteUserFromProjectSuccess(){
+        User owner = new User();
+        owner.setId(1L);
+        owner.setUsername(LOGGED_USERNAME);
+
+        User user = new User();
+        user.setId(2L);
+
+        Project project = new Project();
+        project.setId(10L);
+        project.setOwner(owner);
+
+        Mockito.when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+        Mockito.when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+
+        projectMemberService.deleteUserFromProject(10L, 2L);
+
+        Mockito.verify(projectMemberRepository).deleteByProjectIdAndUserId(10L, 2L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when non owner try to delete to project")
+    void notOwnerTryDeleteFail(){
+        User owner = new  User();
+        owner.setId(1L);
+        owner.setUsername("Owner");
+
+        Project project = new  Project();
+        project.setId(10L);
+        project.setName("Project");
+        project.setOwner(owner);
+
+        Mockito.when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+
+        Assertions.assertThrows(BusinessRuleException.class, () -> {
+            projectMemberService.deleteUserFromProject(10L, 2L);
+        });
+        Mockito.verify(projectMemberRepository, Mockito.never()).save(Mockito.any(ProjectMember.class));
     }
 }

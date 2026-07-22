@@ -251,9 +251,8 @@ class ProjectServiceTest {
 
         Assertions.assertThrows(BusinessRuleException.class, () -> {
             projectService.updateProject(1L, request);
-
-            Mockito.verify(projectRepository, Mockito.never()).save(Mockito.any(Project.class));
         });
+        Mockito.verify(projectRepository, Mockito.never()).save(Mockito.any(Project.class));
     }
 
     @Test
